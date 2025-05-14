@@ -5,6 +5,9 @@
     <meta charset="UTF-8" />
     <title>Advisor Weekly Schedule</title>
     <style>
+        *{
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #f9f9f9;
@@ -56,10 +59,84 @@
             font-weight: bold;
             background: #f1f1f1;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            width: 500px;
+            padding: 20px;
+            border-radius: 6px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            margin: 8px 0;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .modal-content button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .close {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 
 <body>
+    <button onclick="openModal()">Add Slot</button>
+
+    <div id="slotModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add Slot</h2>
+            <input id="inputAdvisorId" placeholder="Advisor ID" />
+            <input id="inputAdvisorName" placeholder="Advisor Name" />
+            <select id="inputDay">
+                <option value="">Select Day</option>
+                <option value="MONDAY">Monday</option>
+                <option value="TUESDAY">Tuesday</option>
+                <option value="WEDNESDAY">Wednesday</option>
+                <option value="THURSDAY">Thursday</option>
+                <option value="FRIDAY">Friday</option>
+                <option value="SATURDAY">Saturday</option>
+                <option value="SUNDAY">Sunday</option>
+            </select>
+            <input id="inputStart" placeholder="Start Time (e.g., 1130)" />
+            <input id="inputEnd" placeholder="End Time (e.g., 1200)" />
+            <button onclick="addSlot()">Submit</button>
+        </div>
+    </div>
+
     <select id="advisorSelect">
         <option value="">Select Advisor</option>
     </select>
@@ -82,9 +159,8 @@
         function formatTime(num) {
             const hour = Math.floor(num / 100);
             const minute = num % 100;
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const hr = hour > 12 ? hour - 12 : hour;
-            return `${hr}:${minute.toString().padStart(2, '0')} ${ampm}`;
+            
+            return `${hour}:${minute===0?"00":minute}`;
         }
 
         function populateDropdown() {
@@ -164,6 +240,74 @@
         });
 
         loadSchedule();
+
+
+
+        function showAddForm() {
+            document.getElementById("addForm").style.display = "block";
+        }
+
+        function addSlot() {
+            const advisorId = document.getElementById("inputAdvisorId").value.trim();
+            const advisorName = document.getElementById("inputAdvisorName").value.trim();
+            const day = document.getElementById("inputDay").value;
+            const startTime = parseInt(document.getElementById("inputStart").value.trim());
+            const endTime = parseInt(document.getElementById("inputEnd").value.trim());
+
+            if (!advisorId || !advisorName || !day || isNaN(startTime) || isNaN(endTime)) {
+                alert("Please fill all fields correctly.");
+                return;
+            }
+
+            if (!scheduleData[day]) scheduleData[day] = [];
+
+            scheduleData[day].push({
+                advisor_id: advisorId,
+                advisor_name: advisorName,
+                start_time: startTime,
+                end_time: endTime
+            });
+
+            populateDropdown();
+            const currentAdvisor = document.getElementById("advisorSelect").value;
+            if (currentAdvisor === advisorId) {
+                renderCalendar(advisorId);
+            }
+            closeModal()
+        }
+
+        function openModal() {
+            const selectedAdvisorId = document.getElementById("advisorSelect").value;
+            const advisorName = advisorMap.get(selectedAdvisorId);
+
+            // Prefill if advisor is selected
+            if (selectedAdvisorId) {
+                document.getElementById("inputAdvisorId").value = selectedAdvisorId;
+                document.getElementById("inputAdvisorName").value = advisorName;
+                document.getElementById("inputAdvisorId").disabled = true;
+                document.getElementById("inputAdvisorName").disabled = true;
+            } else {
+                document.getElementById("inputAdvisorId").value = "";
+                document.getElementById("inputAdvisorName").value = "";
+                document.getElementById("inputAdvisorId").disabled = false;
+                document.getElementById("inputAdvisorName").disabled = false;
+            }
+
+            document.getElementById("slotModal").style.display = "block";
+        }
+
+
+        function closeModal() {
+            document.getElementById("slotModal").style.display = "none";
+        }
+
+        window.onclick = function (event) {
+            if (event.target == document.getElementById("slotModal")) {
+                closeModal();
+            }
+        }
+
+
     </script>
 </body>
 
