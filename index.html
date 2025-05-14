@@ -5,9 +5,10 @@
     <meta charset="UTF-8" />
     <title>Advisor Weekly Schedule</title>
     <style>
-        *{
+        * {
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #f9f9f9;
@@ -108,14 +109,15 @@
             font-weight: bold;
             cursor: pointer;
         }
-        .operations{
+
+        .operations {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 50px;
         }
 
-        .operations > button{
+        .operations>button {
             height: 100%;
             background-color: green;
             color: white;
@@ -154,6 +156,7 @@
             <option value="">Select Advisor</option>
         </select>
         <button onclick="openModal()">Add Slot</button>
+        <button onclick="copyUpdatedJson()">Copy Updated JSON</button>
     </div>
 
 
@@ -175,8 +178,8 @@
         function formatTime(num) {
             const hour = Math.floor(num / 100);
             const minute = num % 100;
-            
-            return `${hour}:${minute===0?"00":minute}`;
+
+            return `${hour}:${minute === 0 ? "00" : minute}`;
         }
 
         function populateDropdown() {
@@ -323,7 +326,13 @@
             }
         }
 
-
+        function copyUpdatedJson() {
+            const updatedJson = JSON.stringify(scheduleData, null, 2);
+            navigator.clipboard.writeText(updatedJson)
+                .then(() => alert("Copied!\nIf you are updating schedule in aws, make sure to replace copied json in Schedule.json and commit to main."))
+                .catch(() => alert("Failed to copy JSON."));
+        }
+        
     </script>
 </body>
 
