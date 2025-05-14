@@ -196,6 +196,7 @@
         function populateDropdown() {
             const select = document.getElementById("advisorSelect");
             advisorMap.clear();
+            select.innerHTML = "";
 
             days.forEach(day => {
                 (scheduleData[day] || []).forEach(slot => {
@@ -287,10 +288,8 @@
             });
 
             populateDropdown();
-            const currentAdvisor = document.getElementById("advisorSelect").value;
-            if (currentAdvisor === advisorId) {
-                renderCalendar(advisorId);
-            }
+            document.getElementById("advisorSelect").value = advisorId;
+            renderCalendar(advisorId);
             closeModal()
         }
 
