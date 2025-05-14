@@ -117,7 +117,7 @@
             gap: 50px;
         }
 
-        .operations>button {
+        button {
             height: 100%;
             background-color: green;
             color: white;
@@ -129,17 +129,17 @@
 </head>
 
 <body>
-    <div style="display: flex; gap: 24px;">
 
-        <h3 id="copySuccess"
-            style="color: white; background-color: green; padding: 10px; border-radius: 20px;display: none; text-align: center;">
-            Copied!
-        </h3>
-        <h3 id="copyWarning"
-            style="color: black; background-color: yellow; padding: 10px; border-radius: 20px;display: none;">
-            If you are updating schedule in aws, make sure to replace copied json in Schedule.json and commit to main.
-        </h3>
+    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">
+        Advisor Slot Editor
+    </h1>
+
+    <div style="margin-bottom: 20px;">
+        <textarea id="jsonInput" rows="10" style="width: 100%;" placeholder="Paste JSON here..."></textarea>
+        <button onclick="loadFromInput()" style="margin-top: 10px;">Load JSON</button>
     </div>
+
+
 
     <div id="slotModal" class="modal">
         <div class="modal-content">
@@ -177,10 +177,10 @@
         const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
         const timeSlots = [];
 
-        // generate 30-min slots from 9:00 AM to 6:00 PM
+
         for (let hour = 11; hour < 20; hour++) {
-            timeSlots.push(hour * 100);      // e.g., 900
-            timeSlots.push(hour * 100 + 30); // e.g., 930
+            timeSlots.push(hour * 100);
+            timeSlots.push(hour * 100 + 30);
         }
 
         let scheduleData = {};
@@ -220,12 +220,10 @@
             const grid = document.createElement("div");
             grid.className = "calendar";
 
-            // Header row
             grid.appendChild(createCell("Time", "header"));
             days.forEach(day => grid.appendChild(createCell(day, "header")));
 
             timeSlots.forEach(slot => {
-                // Time label
                 grid.appendChild(createCell(formatTime(slot), "time-label"));
 
                 days.forEach(day => {
@@ -254,12 +252,6 @@
             return div;
         }
 
-        async function loadSchedule() {
-            const response = await fetch('./Schedule.json');
-            scheduleData = await response.json();
-            populateDropdown();
-        }
-
         document.getElementById("advisorSelect").addEventListener("change", (e) => {
             const advisorId = e.target.value;
             if (advisorId) {
@@ -268,10 +260,6 @@
                 document.getElementById("calendarWrapper").innerHTML = "";
             }
         });
-
-        loadSchedule();
-
-
 
         function showAddForm() {
             document.getElementById("addForm").style.display = "block";
@@ -310,17 +298,12 @@
             const selectedAdvisorId = document.getElementById("advisorSelect").value;
             const advisorName = advisorMap.get(selectedAdvisorId);
 
-            // Prefill if advisor is selected
             if (selectedAdvisorId) {
                 document.getElementById("inputAdvisorId").value = selectedAdvisorId;
                 document.getElementById("inputAdvisorName").value = advisorName;
-                document.getElementById("inputAdvisorId").disabled = true;
-                document.getElementById("inputAdvisorName").disabled = true;
             } else {
                 document.getElementById("inputAdvisorId").value = "";
                 document.getElementById("inputAdvisorName").value = "";
-                document.getElementById("inputAdvisorId").disabled = false;
-                document.getElementById("inputAdvisorName").disabled = false;
             }
 
             document.getElementById("slotModal").style.display = "block";
@@ -341,11 +324,36 @@
             const updatedJson = JSON.stringify(scheduleData, null, 2);
             navigator.clipboard.writeText(updatedJson)
                 .then(() => {
-                    document.getElementById("copyWarning").style.display = "block";
-                    document.getElementById("copySuccess").style.display = "block";
+                    const btn = document.querySelector("button[onclick='copyUpdatedJson()']");
+                    const originalText = btn.textContent;
+                    btn.textContent = "Copied";
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                    }, 2000);
                 })
                 .catch(() => alert("Failed to copy JSON."));
         }
+
+
+        function loadFromInput() {
+            const input = document.getElementById("jsonInput").value.trim();
+            try {
+                const parsed = JSON.parse(input);
+                scheduleData = parsed;
+                populateDropdown();
+
+                const firstAdvisorId = [...advisorMap.keys()][0];
+                if (firstAdvisorId) {
+                    document.getElementById("advisorSelect").value = firstAdvisorId;
+                    renderCalendar(firstAdvisorId);
+                } else {
+                    document.getElementById("calendarWrapper").innerHTML = "";
+                }
+            } catch (e) {
+                alert("Invalid JSON. Please check and try again.");
+            }
+        }
+
 
 
     </script>
