@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Advisor Weekly Schedule</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    select {
+      display: block;
+      margin: 20px auto;
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: 100px repeat(7, 1fr);
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .cell, .header {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+      min-height: 40px;
+    }
+
+    .header {
+      background: #eee;
+      font-weight: bold;
+    }
+
+    .slot-booked {
+      background: #d1e7dd;
+      font-weight: bold;
+    }
+
+    .slot-empty {
+      background: #fff;
+      color: #bbb;
+    }
+
+    .time-label {
+      font-weight: bold;
+      background: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <select id="advisorSelect">
+    <option value="">Select Advisor</option>
+  </select>
+
+  <div id="calendarWrapper"></div>
+
+  <script>
+    const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+    const timeSlots = [];
+
+    // generate 30-min slots from 9:00 AM to 6:00 PM
+    for (let hour = 11; hour < 18; hour++) {
+      timeSlots.push(hour * 100);      // e.g., 900
+      timeSlots.push(hour * 100 + 30); // e.g., 930
+    }
+
+    let scheduleData = {};
+    let advisorMap = new Map();
+
+    function formatTime(num) {
+      const hour = Math.floor(num / 100);
+      const minute = num % 100;
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hr = hour > 12 ? hour - 12 : hour;
+      return `${hr}:${minute.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    function populateDropdown() {
+      const select = document.getElementById("advisorSelect");
+      advisorMap.clear();
+
+      days.forEach(day => {
+        (scheduleData[day] || []).forEach(slot => {
+          if (!advisorMap.has(slot.advisor_id)) {
+            advisorMap.set(slot.advisor_id, slot.advisor_name);
+          }
+        });
+      });
+
+      advisorMap.forEach((name, id) => {
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+    }
+
+    function renderCalendar(advisorId) {
+      const wrapper = document.getElementById("calendarWrapper");
+      wrapper.innerHTML = "";
+
+      const grid = document.createElement("div");
+      grid.className = "calendar";
+
+      // Header row
+      grid.appendChild(createCell("Time", "header"));
+      days.forEach(day => grid.appendChild(createCell(day, "header")));
+
+      timeSlots.forEach(slot => {
+        // Time label
+        grid.appendChild(createCell(formatTime(slot), "time-label"));
+
+        days.forEach(day => {
+          const slotData = scheduleData[day] || [];
+          const match = slotData.find(s =>
+            s.advisor_id === advisorId &&
+            s.start_time <= slot &&
+            s.end_time > slot
+          );
+
+          if (match) {
+            grid.appendChild(createCell("Available", "slot-booked"));
+          } else {
+            grid.appendChild(createCell("", "slot-empty"));
+          }
+        });
+      });
+
+      wrapper.appendChild(grid);
+    }
+
+    function createCell(text, className) {
+      const div = document.createElement("div");
+      div.className = `cell ${className || ""}`;
+      div.textContent = text;
+      return div;
+    }
+
+    async function loadSchedule() {
+      const response = await fetch('./Schedule.json');
+      scheduleData = await response.json();
+      populateDropdown();
+    }
+
+    document.getElementById("advisorSelect").addEventListener("change", (e) => {
+      const advisorId = e.target.value;
+      if (advisorId) {
+        renderCalendar(advisorId);
+      } else {
+        document.getElementById("calendarWrapper").innerHTML = "";
+      }
+    });
+
+    loadSchedule();
+  </script>
+</body>
+</html>
